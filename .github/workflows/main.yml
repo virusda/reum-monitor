@@ -1,0 +1,37 @@
+name: Reum Monitor Bot
+
+on:
+  schedule:
+    # 10분마다 실행 (한국 시간 09:00 ~ 18:50 월~금)
+    # 서버는 UTC 기준이라 한국 시간에서 9시간을 뺍니다.
+    - cron: '*/10 0-9 * * 1-5'
+  workflow_dispatch: # 직접 실행 버튼을 활성화합니다.
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v3
+
+      - name: 파이썬 설정
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: 필요 라이브러리 설치
+        run: pip install requests beautifulsoup4
+
+      - name: 모니터링 스크립트 실행
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python monitor.py
+
+      - name: 상태 업데이트 (기록 저장)
+        run: |
+          git config --global user.name "reum-bot"
+          git config --global user.email "bot@github.com"
+          git add last_id.txt
+          git commit -m "Update last_id" || exit 0
+          git push
